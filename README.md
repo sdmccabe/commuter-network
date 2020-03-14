@@ -17,8 +17,11 @@ Edge:
 - `weight`: the amount of commuting traffic between the edges
 - `margin`: the uncertainty around this magnitude, where available
 
-`construct_town_network.py` creates a weighted edgelist of commuting flows from the
-[2011-2015 5-Year ACS Commuting Flows
-dataset](https://www.census.gov/data/tables/2015/demo/metro-micro/commuting-flows-2015.html)
-(specifically, Table 3).
+`construct_county_network.py` creates a weighted edgelist of commuting flows
+between counties, drawn from Table 1 of the [2011-2015 5-Year ACS Commuting Flows
+dataset](https://www.census.gov/data/tables/2015/demo/metro-micro/commuting-flows-2015.html).
 
+`construct_town_network.py` creates a weighted edgelist of commuting flows
+between minor civil divisions (where available; counties where not available),
+drawn from Table 3 of the [2011-2015 5-Year ACS Commuting Flows
+dataset](https://www.census.gov/data/tables/2015/demo/metro-micro/commuting-flows-2015.html).
