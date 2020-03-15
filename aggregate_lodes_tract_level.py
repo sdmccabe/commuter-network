@@ -20,7 +20,16 @@ def main():
         metadata = pd.read_csv(
             f"data/raw/LODES7/{state}/{state}_xwalk.csv.gz",
             sep=",",
-            usecols=["st", "cty", "trct", "zcta", "stname", "stusps" , "ctyname", "trctname",],
+            usecols=[
+                "st",
+                "cty",
+                "trct",
+                "zcta",
+                "stname",
+                "stusps",
+                "ctyname",
+                "trctname",
+            ],
             compression="gzip",
             encoding="latin-1",
             dtype="str",
