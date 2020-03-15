@@ -2,6 +2,7 @@ import networkx as nx
 import pandas as pd
 import argparse
 from pathlib import Path
+from state_fips_mapping import STATE_TO_FIPS
 
 
 # This script uses the following data files:
@@ -24,8 +25,8 @@ SCHEMA = {
     "target_state_name": str,
     "target_county_name": str,
     "target_mcd_name": str,
-    "flow_weight": str,
-    "flow_margin": str,
+    "weight": str,
+    "margin": str,
 }
 
 
@@ -49,7 +50,7 @@ def main(args):
         names=SCHEMA.keys(),
         dtype=SCHEMA,
     )
-    df = df.loc[pd.notnull(df["flow_weight"]), :]
+    df = df.loc[pd.notnull(df["weight"]), :]
 
     # Because there is a mixture of MCD-level and county-level flow,
     # we need to bring in both gazetteers. Note that we will be padding
@@ -92,8 +93,8 @@ def main(args):
     df = df.loc[df["target_state_fips_code"].astype(float) <= 56, :]
     df = df.loc[df["source_state_fips_code"].astype(float) <= 56, :]
 
-    df["flow_weight"] = df["flow_weight"].apply(parseint)
-    df["flow_margin"] = df["flow_margin"].apply(parseint)
+    df["weight"] = df["weight"].apply(parseint)
+    df["margin"] = df["margin"].apply(parseint)
 
     # As discussed above, we have a mixture of MCD and county-level nodes.
     df["source_mcd_name"] = df["source_mcd_name"].fillna("")
@@ -107,7 +108,8 @@ def main(args):
 
     # Restrict to the desired states
     if args.states is not None:
-        STATES = [x for x in args.states.split(",")]
+        STATES = [x.strip().lower() for x in args.states.split(",")]
+        STATES = [STATE_TO_FIPS[x] for x in STATES]
         df = df.loc[df["target_state_fips_code"].isin(STATES), :]
         df = df.loc[df["source_state_fips_code"].isin(STATES), :]
 
@@ -141,7 +143,7 @@ def main(args):
         df,
         "source_fips",
         "target_fips",
-        edge_attr=["flow_weight", "flow_margin"],
+        edge_attr=["weight", "margin"],
         create_using=nx.DiGraph(),
     )
 
@@ -220,7 +222,7 @@ if __name__ == "__main__":
         "-o",
         "--output",
         action="store",
-G       help="The name of a subfolder of data/derived to save to. If this "
+        help="The name of a subfolder of data/derived to save to. If this "
         "argument is absent, save to data/derived directly",
         default=None,
     )

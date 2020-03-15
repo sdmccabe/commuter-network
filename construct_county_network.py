@@ -2,6 +2,7 @@ import networkx as nx
 import pandas as pd
 import argparse
 from pathlib import Path
+from state_fips_mapping import STATE_TO_FIPS
 
 # This script uses the following data files:
 #
@@ -18,8 +19,8 @@ SCHEMA = {
     "target_county_fips_code": str,
     "target_state_name": str,
     "target_county_name": str,
-    "flow_weight": str,
-    "flow_margin": str,
+    "weight": str,
+    "margin": str,
 }
 
 
@@ -43,7 +44,7 @@ def main(args):
         names=SCHEMA.keys(),
         dtype=SCHEMA,
     )
-    df = df.loc[pd.notnull(df["flow_weight"]), :]
+    df = df.loc[pd.notnull(df["weight"]), :]
 
     gazetteer = pd.read_csv(
         "data/raw/2019_Gaz_counties_national.txt", sep="\t", dtype={"GEOID": str},
@@ -81,12 +82,13 @@ def main(args):
 
     # Restrict to the desired states
     if args.states is not None:
-        STATES = [x for x in args.states.split(",")]
+        STATES = [x.strip().lower() for x in args.states.split(",")]
+        STATES = [STATE_TO_FIPS[x] for x in STATES]
         df = df.loc[df["target_state_fips_code"].isin(STATES), :]
         df = df.loc[df["source_state_fips_code"].isin(STATES), :]
 
-    df["flow_weight"] = df["flow_weight"].apply(parseint)
-    df["flow_margin"] = df["flow_margin"].apply(parseint)
+    df["weight"] = df["weight"].apply(parseint)
+    df["margin"] = df["margin"].apply(parseint)
 
     # Simple concatenation of component FIPS codes.
     df["source_fips"] = df.apply(
@@ -114,7 +116,7 @@ def main(args):
         df,
         "source_fips",
         "target_fips",
-        edge_attr=["flow_weight", "flow_margin"],
+        edge_attr=["weight", "margin"],
         create_using=nx.DiGraph(),
     )
 
