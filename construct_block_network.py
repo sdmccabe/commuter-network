@@ -19,7 +19,6 @@ def main(args):
         # fmt: on
     else:
         STATES = [x.strip().lower() for x in args.states.split(",")]
-        print(STATES)
 
     metadatas = []
     dfs = []
@@ -67,8 +66,6 @@ def main(args):
     metadata = pd.concat(metadatas, axis=0, ignore_index=True)
     del dfs
     del metadatas
-    print(df)
-    print(metadata)
 
     G = nx.from_pandas_edgelist(
         df, "source", "target", edge_attr=["weight"], create_using=nx.DiGraph()
@@ -81,21 +78,17 @@ def main(args):
     lat_dict = metadata.set_index("tabblk2010")["blklatdd"].to_dict()
     long_dict = metadata.set_index("tabblk2010")["blklondd"].to_dict()
 
-    print(state_dict)
     nx.set_node_attributes(G, state_dict, "state")
     nx.set_node_attributes(G, county_dict, "county")
     nx.set_node_attributes(G, tract_dict, "tract")
     nx.set_node_attributes(G, lat_dict, "latitude")
     nx.set_node_attributes(G, long_dict, "longitude")
 
-    print(list(G.nodes(data=True))[:100])
     if args.output is None:
         nx.write_graphml(G, "data/derived/block_commuter_flows.graphml")
     else:
         Path(f"data/derived/{args.output}").mkdir(parents=True, exist_ok=True)
         nx.write_graphml(G, f"data/derived/{args.output}/block_commuter_flows.graphml")
-
-    print(nx.info(G))
 
 
 if __name__ == "__main__":
