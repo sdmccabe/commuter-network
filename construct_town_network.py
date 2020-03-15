@@ -129,7 +129,11 @@ def main():
 
     # Construct the graph with edge attributes.
     G = nx.from_pandas_edgelist(
-        df, "source_fips", "target_fips", edge_attr=["flow_weight", "flow_margin"]
+        df,
+        "source_fips",
+        "target_fips",
+        edge_attr=["flow_weight", "flow_margin"],
+        create_using=nx.Digraph(),
     )
 
     # Node attributes are a bit trickier. It's unlikely, but just to make sure
