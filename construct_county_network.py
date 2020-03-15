@@ -1,5 +1,7 @@
 import networkx as nx
 import pandas as pd
+import argparse
+from pathlib import Path
 
 # This script uses the following data files:
 #
@@ -33,7 +35,7 @@ def construct_fips(state, county):
     return state + county
 
 
-def main():
+def main(args):
     df = pd.read_excel(
         "data/raw/table1.xlsx",
         skiprows=7,
@@ -73,12 +75,18 @@ def main():
     df = df.loc[df["target_state_fips_code"].astype(float) <= 56, :]
     df = df.loc[df["source_state_fips_code"].astype(float) <= 56, :]
 
-    df["flow_weight"] = df["flow_weight"].apply(parseint)
-    df["flow_margin"] = df["flow_margin"].apply(parseint)
-
     # Strip initial zero in state FIPS codes for target. The spreadsheet
     # has state FIPS as a three-digit number to allow for Canada.
     df["target_state_fips_code"] = df["target_state_fips_code"].str[1:]
+
+    # Restrict to the desired states
+    if args.states is not None:
+        STATES = [x for x in args.states.split(",")]
+        df = df.loc[df["target_state_fips_code"].isin(STATES), :]
+        df = df.loc[df["source_state_fips_code"].isin(STATES), :]
+
+    df["flow_weight"] = df["flow_weight"].apply(parseint)
+    df["flow_margin"] = df["flow_margin"].apply(parseint)
 
     # Simple concatenation of component FIPS codes.
     df["source_fips"] = df.apply(
@@ -98,8 +106,8 @@ def main():
     df = df.loc[df["source_fips"].apply(lambda s: len(s) == 5), :]
     df = df.loc[df["target_fips"].apply(lambda s: len(s) == 5), :]
 
-    df = df.merge(source_gazetteer, how="left", on="source_fips",)
-    df = df.merge(target_gazetteer, how="left", on="target_fips",)
+    df = df.merge(source_gazetteer, how="left", on="source_fips")
+    df = df.merge(target_gazetteer, how="left", on="target_fips")
 
     # Construct the graph with edge attributes.
     G = nx.from_pandas_edgelist(
@@ -122,9 +130,9 @@ def main():
     )
     source_attr_df = (
         df.set_index("source_fips")
-        .loc[:, ["target_state_name", "target_county_name"]]
+        .loc[:, ["source_state_name", "source_county_name"]]
         .rename(
-            {"target_state_name": "state", "target_county_name": "county",}, axis=1,
+            {"source_state_name": "state", "source_county_name": "county",}, axis=1,
         )
     )
     lat_dict = gazetteer.set_index("GEOID")["INTPTLAT"].to_dict()
@@ -143,9 +151,38 @@ def main():
     nx.set_node_attributes(G, lat_dict, "latitude")
     nx.set_node_attributes(G, long_dict, "longitude")
 
-    df.to_csv("data/derived/county_commuter_flows.tsv", sep="\t", index=False)
-    nx.write_graphml(G, "data/derived/county_commuter_flows.graphml")
+    if args.output is None:
+        df.to_csv("data/derived/county_commuter_flows.tsv", sep="\t", index=False)
+        nx.write_graphml(G, "data/derived/county_commuter_flows.graphml")
+    else:
+        Path(f"data/derived/{args.output}").mkdir(parents=True, exist_ok=True)
+        df.to_csv(
+            f"data/derived/{args.output}/county_commuter_flows.tsv",
+            sep="\t",
+            index=False,
+        )
+        nx.write_graphml(G, f"data/derived/{args.output}/county_commuter_flows.graphml")
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(
+        description="Construct county-level commuter networks."
+    )
+    parser.add_argument(
+        "-s",
+        "--states",
+        action="store",
+        help="A comma-separated list of two-digit state USPS codes to include "
+        "in the network. If this argument is absent use all 50 states + DC.",
+        default=None,
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        action="store",
+        help="The name of a subfolder of data/derived to save to. If this "
+        "argument is absent, save to data/derived directly",
+        default=None,
+    )
+    args = parser.parse_args()
+    main(args)

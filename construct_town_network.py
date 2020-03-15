@@ -1,5 +1,8 @@
 import networkx as nx
 import pandas as pd
+import argparse
+from pathlib import Path
+
 
 # This script uses the following data files:
 #
@@ -38,7 +41,7 @@ def construct_fips(state, county, mcd):
     return state + county + mcd
 
 
-def main():
+def main(args):
     df = pd.read_excel(
         "data/raw/table3.xlsx",
         skiprows=7,
@@ -102,6 +105,12 @@ def main():
     # has state FIPS as a three-digit number to allow for Canada.
     df["target_state_fips_code"] = df["target_state_fips_code"].str[1:]
 
+    # Restrict to the desired states
+    if args.states is not None:
+        STATES = [x for x in args.states.split(",")]
+        df = df.loc[df["target_state_fips_code"].isin(STATES), :]
+        df = df.loc[df["source_state_fips_code"].isin(STATES), :]
+
     # Simple concatenation of component FIPS codes.
     df["source_fips"] = df.apply(
         lambda row: construct_fips(
@@ -133,7 +142,7 @@ def main():
         "source_fips",
         "target_fips",
         edge_attr=["flow_weight", "flow_margin"],
-        create_using=nx.Digraph(),
+        create_using=nx.DiGraph(),
     )
 
     # Node attributes are a bit trickier. It's unlikely, but just to make sure
@@ -182,9 +191,38 @@ def main():
     nx.set_node_attributes(G, lat_dict, "latitude")
     nx.set_node_attributes(G, long_dict, "longitude")
 
-    df.to_csv("data/derived/town_commuter_flows.tsv", sep="\t", index=False)
-    nx.write_graphml(G, "data/derived/town_commuter_flows.graphml")
+    if args.output is None:
+        df.to_csv("data/derived/town_commuter_flows.tsv", sep="\t", index=False)
+        nx.write_graphml(G, "data/derived/town_commuter_flows.graphml")
+    else:
+        Path(f"data/derived/{args.output}").mkdir(parents=True, exist_ok=True)
+        df.to_csv(
+            f"data/derived/{args.output}/town_commuter_flows.tsv",
+            sep="\t",
+            index=False,
+        )
+        nx.write_graphml(G, f"data/derived/{args.output}/town_commuter_flows.graphml")
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(
+        description="Construct town-level commuter networks."
+    )
+    parser.add_argument(
+        "-s",
+        "--states",
+        action="store",
+        help="A comma-separated list of two-digit state FIPS codes to include "
+        "in the network. If this argument is absent use all 50 states + DC.",
+        default=None,
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        action="store",
+G       help="The name of a subfolder of data/derived to save to. If this "
+        "argument is absent, save to data/derived directly",
+        default=None,
+    )
+    args = parser.parse_args()
+    main(args)
