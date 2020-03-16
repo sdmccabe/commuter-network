@@ -15,7 +15,7 @@ Node:
 
 Edge:
 - `weight`: the amount of commuting traffic between the edges
-- `margin`: the uncertainty around this magnitude, where available
+- `margin`: the uncertainty around this magnitude, where available (ACS only)
 
 `construct_county_network.py` creates a weighted edgelist of commuting flows
 between counties, drawn from Table 1 of the [2011-2015 5-Year ACS Commuting Flows
@@ -41,10 +41,11 @@ running it, download the LODES data using the `collect_lodes_data.sh` script.
 All four scripts are used in the same way.
 
 ```{python}
-python construct_block_network.py -s ma,me,vt,ct,ri,nh -o new_england
+python construct_block_network.py -s ma,me,vt,ct,ri,nh -o new_england -m 1
 ```
 
 The `-s` flag takes a comma-separated list of USPS state codes; if it is absent,
 it runs the script across all 50 states plus DC. The output data files are in
 `data/derived`; the `-o` flag adds an additional subdirectory (e.g.,
-`data/derived/new_england`). 
+`data/derived/new_england`). The `-m` flag specifies a minimum weight necessary
+for an edge to be included, effectively thresholding the network.

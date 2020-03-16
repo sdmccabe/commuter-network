@@ -34,9 +34,12 @@ def main(args):
     )
 
     flow = open_dfs(
-        flow_files, dtype={"source": "str", "target": "str"}, compression="gzip"
+        flow_files,
+        dtype={"source": "str", "target": "str", "weight": "Int64"},
+        compression="gzip",
     )
 
+    flow = flow.loc[flow["weight"] >= int(args.minimum_weight), :]
     gazetteer = pd.read_csv(
         "data/raw/2019_Gaz_tracts_national.txt", sep="\t", dtype={"GEOID": str},
     )
@@ -87,6 +90,14 @@ if __name__ == "__main__":
         help="The name of a subfolder of data/derived to save to. If this "
         "argument is absent, save to data/derived directly",
         default=None,
+    )
+    parser.add_argument(
+        "-m",
+        "--minimum-weight",
+        action="store",
+        help="The minimum number of trips required to keep an edge. Where "
+        "this is higher, the resulting graph will be sparser.",
+        default=0,
     )
     args = parser.parse_args()
 

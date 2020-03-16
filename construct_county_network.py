@@ -19,7 +19,7 @@ SCHEMA = {
     "target_county_fips_code": str,
     "target_state_name": str,
     "target_county_name": str,
-    "weight": str,
+    "weight": 'Int64',
     "margin": str,
 }
 
@@ -89,6 +89,8 @@ def main(args):
 
     df["weight"] = df["weight"].apply(parseint)
     df["margin"] = df["margin"].apply(parseint)
+
+    df = df.loc[df["weight"] >= int(args.minimum_weight), :]
 
     # Simple concatenation of component FIPS codes.
     df["source_fips"] = df.apply(
@@ -185,6 +187,14 @@ if __name__ == "__main__":
         help="The name of a subfolder of data/derived to save to. If this "
         "argument is absent, save to data/derived directly",
         default=None,
+    )
+    parser.add_argument(
+        "-m",
+        "--minimum-weight",
+        action="store",
+        help="The minimum number of trips required to keep an edge. Where "
+        "this is higher, the resulting graph will be sparser.",
+        default=0,
     )
     args = parser.parse_args()
     main(args)

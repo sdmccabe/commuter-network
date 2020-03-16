@@ -55,7 +55,7 @@ def main(args):
                 usecols=["w_geocode", "h_geocode", "S000"],
                 compression="gzip",
                 encoding="latin-1",
-                dtype={"w_geocode": "str", "h_geocode": "str", "S000": "int"},
+                dtype={"w_geocode": "str", "h_geocode": "str", "S000": "Int64"},
             ).rename(
                 columns={"w_geocode": "target", "h_geocode": "source", "S000": "weight"}
             )
@@ -67,6 +67,7 @@ def main(args):
     del dfs
     del metadatas
 
+    df = df.loc[df["weight"] >= int(args.minimum_weight), :]
     G = nx.from_pandas_edgelist(
         df, "source", "target", edge_attr=["weight"], create_using=nx.DiGraph()
     )
@@ -111,5 +112,14 @@ if __name__ == "__main__":
         "argument is absent, save to data/derived directly",
         default=None,
     )
+    parser.add_argument(
+        "-m",
+        "--minimum-weight",
+        action="store",
+        help="The minimum number of trips required to keep an edge. Where "
+        "this is higher, the resulting graph will be sparser.",
+        default=0,
+    )
+
     args = parser.parse_args()
     main(args)
