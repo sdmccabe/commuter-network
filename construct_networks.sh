@@ -1,11 +1,16 @@
 #!/bin/bash
 
-if [ ! -d "data/raw/LODES7" ]
+if [ ! -d "data/raw/LODES7/ak" ]
 then
-    bash collected_lodes_data.sh
+    bash collect_lodes_data.sh
 fi
 
-if [ ! -d "data/derived/lodes_tract" ]
+if [ ! -d "data/raw/population_data/ak" ]
+then
+    python collect_population_data.py
+fi
+
+if [ ! -f "data/derived/lodes_tract/wy_flow.csv.gz" ]
 then
     python aggregate_lodes_tract_level.py
 fi
