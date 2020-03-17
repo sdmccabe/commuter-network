@@ -18,13 +18,16 @@ def open_dfs(fnames, **kwargs):
 def main(args):
     if args.states is None:
         metadata_files = glob.glob(f"data/derived/lodes_tract/*_metadata.csv.gz")
+        pop_files = glob.glob(f"data/raw/population_data/tract/*.tsv")
         flow_files = glob.glob(f"data/derived/lodes_tract/*_flow.csv.gz")
     else:
         STATES = [x.strip().lower() for x in args.states.split(",")]
         metadata_files = []
+        pop_files = []
         flow_files = []
         for state in STATES:
             metadata_files.append(f"data/derived/lodes_tract/{state}_metadata.csv.gz")
+            pop_files.append(f"data/raw/population_data/tract/{state}.tsv")
             flow_files.append(f"data/derived/lodes_tract/{state}_flow.csv.gz")
 
     metadata = open_dfs(
@@ -32,7 +35,7 @@ def main(args):
         dtype={"st": "str", "cty": "str", "trct": "str", "zcta": "str"},
         compression="gzip",
     )
-
+    pop = open_dfs(pop_files, sep="\t", dtype={"FIPS": "str"},)
     flow = open_dfs(
         flow_files,
         dtype={"source": "str", "target": "str", "weight": "Int64"},
@@ -63,6 +66,23 @@ def main(args):
     nx.set_node_attributes(G, tract_dict, "tract")
     nx.set_node_attributes(G, lat_dict, "latitude")
     nx.set_node_attributes(G, long_dict, "longitude")
+    for p in [
+        "Population",
+        "<18",
+        "18-24",
+        "25-29",
+        "30-34",
+        "35-39",
+        "40-44",
+        "45-49",
+        "50-54",
+        "55-59",
+        "60-64",
+        "65+",
+    ]:
+        d = pop.set_index("FIPS").loc[:, p].to_dict()
+        print(d)
+        nx.set_node_attributes(G, d, p)
 
     if args.output is None:
         nx.write_graphml(G, "data/derived/tract_commuter_flows.graphml")

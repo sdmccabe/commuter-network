@@ -19,7 +19,7 @@ SCHEMA = {
     "target_county_fips_code": str,
     "target_state_name": str,
     "target_county_name": str,
-    "weight": 'Int64',
+    "weight": "Int64",
     "margin": str,
 }
 
@@ -83,9 +83,22 @@ def main(args):
     # Restrict to the desired states
     if args.states is not None:
         STATES = [x.strip().lower() for x in args.states.split(",")]
-        STATES = [STATE_TO_FIPS[x] for x in STATES]
-        df = df.loc[df["target_state_fips_code"].isin(STATES), :]
-        df = df.loc[df["source_state_fips_code"].isin(STATES), :]
+        STATE_FIPS = [STATE_TO_FIPS[x] for x in STATES]
+        df = df.loc[df["target_state_fips_code"].isin(STATE_FIPS), :]
+        df = df.loc[df["source_state_fips_code"].isin(STATE_FIPS), :]
+    else:
+        STATES = STATE_TO_FIPS.keys()
+
+    pop_metadatas = []
+    for state in STATES:
+        pop = pd.read_csv(
+            f"data/raw/population_data/county/{state}.tsv",
+            sep="\t",
+            dtype={"FIPS": "str"},
+        )
+        pop_metadatas.append(pop)
+    pop_metadata = pd.concat(pop_metadatas, axis=0, ignore_index=True)
+    del pop_metadatas
 
     df["weight"] = df["weight"].apply(parseint)
     df["margin"] = df["margin"].apply(parseint)
@@ -109,6 +122,9 @@ def main(args):
 
     df = df.loc[df["source_fips"].apply(lambda s: len(s) == 5), :]
     df = df.loc[df["target_fips"].apply(lambda s: len(s) == 5), :]
+
+    df = df.merge(pop_metadata, "left", left_on="target_fips", right_on="FIPS")
+    del pop_metadata
 
     df = df.merge(source_gazetteer, how="left", on="source_fips")
     df = df.merge(target_gazetteer, how="left", on="target_fips")
@@ -154,6 +170,23 @@ def main(args):
     nx.set_node_attributes(G, county_dict, "county")
     nx.set_node_attributes(G, lat_dict, "latitude")
     nx.set_node_attributes(G, long_dict, "longitude")
+
+    for pop in [
+        "Population",
+        "<18",
+        "18-24",
+        "25-29",
+        "30-34",
+        "35-39",
+        "40-44",
+        "45-49",
+        "50-54",
+        "55-59",
+        "60-64",
+        "65+",
+    ]:
+        d = df.set_index("target_fips").loc[:, pop].to_dict()
+        nx.set_node_attributes(G, d, pop)
 
     if args.output is None:
         df.to_csv("data/derived/county_commuter_flows.tsv", sep="\t", index=False)
