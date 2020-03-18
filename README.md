@@ -10,6 +10,10 @@ Node:
 - `state`, `county`: straightforward descriptives 
 - `town`: in states where available, the name of the relevant [minor civil divisions](https://en.wikipedia.org/wiki/Minor_civil_division)
 - `block`, `tract`: Census administrative units
+- `Population`: The total population of the region in the 2016 5-year ACS. The
+  population data is downloaded using the `collect_population_data.py` script.
+- `<18`, `18-24`, ...,  `65+`: Distribution of ages in the region, also drawn
+  from the 2016 5-year ACS.
 - `latitude`, `longitude`: coordinates for the relevant spatial unit, drawn from 2019
    [Census gazetteer files](https://www.census.gov/geographies/reference-files/time-series/geo/gazetteer-files.html)
 
