@@ -4,16 +4,19 @@
 if [ ! -f "data/raw/2019_Gaz_counties_national.txt" ]
 then
     wget -P "data/raw/" "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2019_Gazetteer/2019_Gaz_counties_national.zip"
+    unzip "data/raw/2019_Gaz_counties_national.zip" -d data/raw
 fi
 
 if [ ! -f "data/raw/2019_Gaz_cousubs_national.txt" ]
 then
     wget -P "data/raw/" "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2019_Gazetteer/2019_Gaz_cousubs_national.zip"
+    unzip "data/raw/2019_Gaz_cousubs_national.zip" -d data/raw
 fi
 
 if [ ! -f "data/raw/2019_Gaz_tracts_national.txt" ]
 then
     wget -P "data/raw/" "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2019_Gazetteer/2019_Gaz_tracts_national.zip"
+    unzip "data/raw/2019_Gaz_tracts_national.zip" -d data/raw
 fi
 
 # collect ACS commuter flow data
