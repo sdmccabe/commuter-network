@@ -3,6 +3,7 @@ import networkx as nx
 import glob
 import argparse
 from pathlib import Path
+from state_fips_mapping import STATE_TO_FIPS
 
 
 def open_dfs(fnames, **kwargs):
@@ -20,6 +21,7 @@ def main(args):
         metadata_files = glob.glob(f"data/derived/lodes_tract/*_metadata.csv.gz")
         pop_files = glob.glob(f"data/raw/population_data/tract/*.tsv")
         flow_files = glob.glob(f"data/derived/lodes_tract/*_flow.csv.gz")
+        STATES = STATE_TO_FIPS.keys()
     else:
         STATES = [x.strip().lower() for x in args.states.split(",")]
         metadata_files = []
@@ -48,7 +50,10 @@ def main(args):
     )
     gazetteer.columns = [x.strip() for x in gazetteer.columns]
     gazetteer = gazetteer.loc[:, ["GEOID", "INTPTLONG", "INTPTLAT"]]
+    SFIPS = [STATE_TO_FIPS[s] for s in STATES]
 
+    flow = flow.loc[flow['source'].str[:2].isin(SFIPS), :]
+    flow = flow.loc[flow['target'].str[:2].isin(SFIPS), :]
     G = nx.from_pandas_edgelist(
         flow, "source", "target", edge_attr=["weight"], create_using=nx.DiGraph()
     )
@@ -81,7 +86,6 @@ def main(args):
         "65+",
     ]:
         d = pop.set_index("FIPS").loc[:, p].to_dict()
-        print(d)
         nx.set_node_attributes(G, d, p)
 
     if args.output is None:
