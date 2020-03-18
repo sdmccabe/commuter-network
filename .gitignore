@@ -129,4 +129,4 @@ dmypy.json
 .pyre/
 
 data/raw/LODES7/
-CENSUS_API_KEY
+population_data/
