@@ -16,14 +16,14 @@ def open_dfs(fnames, **kwargs):
     return df
 
 
-def main(args):
-    if args.states is None:
+def construct_network(states, minimum_weight, output):
+    if states is None:
         metadata_files = glob.glob(f"data/derived/lodes_tract/*_metadata.csv.gz")
         pop_files = glob.glob(f"data/raw/population_data/tract/*.tsv")
         flow_files = glob.glob(f"data/derived/lodes_tract/*_flow.csv.gz")
         STATES = STATE_TO_FIPS.keys()
     else:
-        STATES = [x.strip().lower() for x in args.states.split(",")]
+        STATES = [x.strip().lower() for x in states.split(",")]
         metadata_files = []
         pop_files = []
         flow_files = []
@@ -44,7 +44,7 @@ def main(args):
         compression="gzip",
     )
 
-    flow = flow.loc[flow["weight"] >= int(args.minimum_weight), :]
+    flow = flow.loc[flow["weight"] >= int(minimum_weight), :]
     gazetteer = pd.read_csv(
         "data/raw/2019_Gaz_tracts_national.txt", sep="\t", dtype={"GEOID": str},
     )
@@ -88,11 +88,11 @@ def main(args):
         d = pop.set_index("FIPS").loc[:, p].to_dict()
         nx.set_node_attributes(G, d, p)
 
-    if args.output is None:
+    if output is None:
         nx.write_graphml(G, "data/derived/tract_commuter_flows.graphml")
     else:
-        Path(f"data/derived/{args.output}").mkdir(parents=True, exist_ok=True)
-        nx.write_graphml(G, f"data/derived/{args.output}/tract_commuter_flows.graphml")
+        Path(f"data/derived/{output}").mkdir(parents=True, exist_ok=True)
+        nx.write_graphml(G, f"data/derived/{output}/tract_commuter_flows.graphml")
 
 
 if __name__ == "__main__":
@@ -125,4 +125,4 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    main(args)
+    construct_network(args.states, args.minimum_weight, args.output)

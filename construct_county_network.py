@@ -36,7 +36,7 @@ def construct_fips(state, county):
     return state + county
 
 
-def main(args):
+def construct_network(states, minimum_weight, output):
     df = pd.read_excel(
         "data/raw/table1.xlsx",
         skiprows=7,
@@ -81,8 +81,8 @@ def main(args):
     df["target_state_fips_code"] = df["target_state_fips_code"].str[1:]
 
     # Restrict to the desired states
-    if args.states is not None:
-        STATES = [x.strip().lower() for x in args.states.split(",")]
+    if states is not None:
+        STATES = [x.strip().lower() for x in states.split(",")]
         STATE_FIPS = [STATE_TO_FIPS[x] for x in STATES]
         df = df.loc[df["target_state_fips_code"].isin(STATE_FIPS), :]
         df = df.loc[df["source_state_fips_code"].isin(STATE_FIPS), :]
@@ -103,7 +103,7 @@ def main(args):
     df["weight"] = df["weight"].apply(parseint)
     df["margin"] = df["margin"].apply(parseint)
 
-    df = df.loc[df["weight"] >= int(args.minimum_weight), :]
+    df = df.loc[df["weight"] >= int(minimum_weight), :]
 
     # Simple concatenation of component FIPS codes.
     df["source_fips"] = df.apply(
@@ -188,17 +188,17 @@ def main(args):
         d = df.set_index("target_fips").loc[:, pop].to_dict()
         nx.set_node_attributes(G, d, pop)
 
-    if args.output is None:
+    if output is None:
         df.to_csv("data/derived/county_commuter_flows.tsv", sep="\t", index=False)
         nx.write_graphml(G, "data/derived/county_commuter_flows.graphml")
     else:
-        Path(f"data/derived/{args.output}").mkdir(parents=True, exist_ok=True)
+        Path(f"data/derived/{output}").mkdir(parents=True, exist_ok=True)
         df.to_csv(
-            f"data/derived/{args.output}/county_commuter_flows.tsv",
+            f"data/derived/{output}/county_commuter_flows.tsv",
             sep="\t",
             index=False,
         )
-        nx.write_graphml(G, f"data/derived/{args.output}/county_commuter_flows.graphml")
+        nx.write_graphml(G, f"data/derived/{output}/county_commuter_flows.graphml")
 
 
 if __name__ == "__main__":
@@ -230,4 +230,4 @@ if __name__ == "__main__":
         default=0,
     )
     args = parser.parse_args()
-    main(args)
+    construct_network(args.states, args.minimum_weight, args.output)

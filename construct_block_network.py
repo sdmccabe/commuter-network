@@ -5,8 +5,8 @@ import networkx as nx
 from pathlib import Path
 
 
-def main(args):
-    if args.states is None:
+def construct_network(states, minimum_weight, output):
+    if states is None:
         # fmt: off
         STATES = [
             "ak", "al", "ar", "az", "ca", "co", "ct", "dc", "de", "fl",
@@ -18,7 +18,7 @@ def main(args):
         ]
         # fmt: on
     else:
-        STATES = [x.strip().lower() for x in args.states.split(",")]
+        STATES = [x.strip().lower() for x in states.split(",")]
 
     metadatas = []
     dfs = []
@@ -67,7 +67,7 @@ def main(args):
     del dfs
     del metadatas
 
-    df = df.loc[df["weight"] >= int(args.minimum_weight), :]
+    df = df.loc[df["weight"] >= int(minimum_weight), :]
     G = nx.from_pandas_edgelist(
         df, "source", "target", edge_attr=["weight"], create_using=nx.DiGraph()
     )
@@ -85,11 +85,11 @@ def main(args):
     nx.set_node_attributes(G, lat_dict, "latitude")
     nx.set_node_attributes(G, long_dict, "longitude")
 
-    if args.output is None:
+    if output is None:
         nx.write_graphml(G, "data/derived/block_commuter_flows.graphml")
     else:
-        Path(f"data/derived/{args.output}").mkdir(parents=True, exist_ok=True)
-        nx.write_graphml(G, f"data/derived/{args.output}/block_commuter_flows.graphml")
+        Path(f"data/derived/{output}").mkdir(parents=True, exist_ok=True)
+        nx.write_graphml(G, f"data/derived/{output}/block_commuter_flows.graphml")
 
 
 if __name__ == "__main__":
@@ -122,4 +122,4 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    main(args)
+    construct_network(args.states, args.minimum_weight, args.output)
